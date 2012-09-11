@@ -25,38 +25,28 @@ class mongodb(
   $package = $mongodb::params::package
 ) inherits mongodb::params {
 
-  exec { "10gen-apt-key":
-    path => "/bin:/usr/bin",
-    command => "apt-key adv --keyserver keyserver.ubuntu.com --recv 7F0CEB10",
-    unless => "apt-key list | grep 10gen",
+  file { "/etc/yum.repos.d/10gen.repo":
+    mode => 644,
+    owner => root,
+    group => root,
+    notify => Exec["yum-clean"],
+    content => template("regression/10gen.repo.erb")
   }
 
-  exec { "10gen-apt-repo":
-    path => "/bin:/usr/bin",
-    command => "echo '${repository}' >> /etc/apt/sources.list",
-    unless => "cat /etc/apt/sources.list | grep 10gen",
-    require => Exec["10gen-apt-key"],
+  package { [mongo20-10gen]:
+    ensure => installed
   }
 
-  exec { "10gen-apt-update":
-    path => "/bin:/usr/bin",
-    command => "apt-get update",
-    unless => "ls /usr/bin | grep mongo",
-    require => Exec["10gen-apt-repo"],
+  package { [mongo20-10gen-server]:
+    ensure => installed
   }
 
-  package { $package:
-    ensure => installed,
-    require => Exec["10gen-apt-update"],
-  }
+  exec { "yum-clean":
+		command => "/usr/bin/yum clean all",
+		refreshonly => true,
+	}
 
-  service { "mongodb":
-    enable => true,
-    ensure => running,
-    require => Package[$package],
-  }
-
-  file { "/etc/init/mongodb.conf":
+  file { "/etc/mongodb.conf":
     content => template("mongodb/mongodb.conf.erb"),
     mode => "0644",
     notify => Service["mongodb"],
