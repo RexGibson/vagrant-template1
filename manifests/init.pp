@@ -17,20 +17,12 @@
 #    ulimit_nofile => 20000,
 #  }
 #
-class mongodb(
-  $replSet = $mongodb::params::replSet,
-  $respawn = $mongodb::params::respawn,
-  $ulimit_nofile = $mongodb::params::ulimit_nofile,
-  $repository = $mongodb::params::repository,
-  $package = $mongodb::params::package
-) inherits mongodb::params {
-
   file { "/etc/yum.repos.d/10gen.repo":
     mode => 644,
     owner => root,
     group => root,
     notify => Exec["yum-clean"],
-    content => template("regression/10gen.repo.erb")
+    content => template("templates/10gen.repo.erb")
   }
 
   package { [mongo20-10gen]:
@@ -47,10 +39,15 @@ class mongodb(
 	}
 
   file { "/etc/mongodb.conf":
-    content => template("mongodb/mongodb.conf.erb"),
+    content => template("templates/mongodb.conf.erb"),
     mode => "0644",
     notify => Service["mongodb"],
     require => Package[$package],
   }
 
-}
+  file { "/etc/init.d/mongod":
+    mode => 755,
+    owner => root,
+    group => root,
+    content => template("templates/mongo_init.erb")
+  }
