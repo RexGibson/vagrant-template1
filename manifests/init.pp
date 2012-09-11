@@ -41,8 +41,6 @@
   file { "/etc/mongodb.conf":
     content => template("templates/mongodb.conf.erb"),
     mode => "0644",
-    notify => Service["mongodb"],
-    require => Package[$package],
   }
 
   file { "/etc/init.d/mongod":
